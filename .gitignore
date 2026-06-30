@@ -2,6 +2,7 @@ work
 *.pyc
 TODO
 src/lib/adafruit*
+test/lib/adafruit*
 src/local
 local
 *secrets.py
