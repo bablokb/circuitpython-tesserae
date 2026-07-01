@@ -180,3 +180,13 @@ class Tesserae_API:
     """ post status information """
 
     return self._post(f"{self._id['device_id']}/status", info)
+
+  # --- post log   -----------------------------------------------------------
+
+  def log(self, level, msg):
+    """ post status information """
+
+    log = {"level": level,
+           "msg": msg
+           }
+    return self._post(f"{self._id['device_id']}/log", log)
