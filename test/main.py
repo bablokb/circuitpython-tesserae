@@ -111,7 +111,7 @@ if not app_config.token:
 while True:
   code, resp = api.frame()
   print(f"api.frame(): HTTP-code: {code}")
-  if code in [200, 204]:
+  if code == 200:
     pp_dict(resp)
   elif code == 304:
     print("not modified")
