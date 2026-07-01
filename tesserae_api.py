@@ -63,7 +63,13 @@ class Tesserae_API:
   def debug(self,msg):
     """ print debug message """
     if self._debug:
-      print(f"Tesserae: {msg}")
+      if isinstance(msg,dict):
+        print("Tesserae: {")
+        for key, value in msg.items():
+          print(f"Tesserae:   {key}: {value}")
+        print("Tesserae: }")
+      else:
+        print(f"Tesserae: {msg}")
 
   # --- build header   -------------------------------------------------------
 
@@ -86,7 +92,8 @@ class Tesserae_API:
     """ post the given (json) content """
 
     endpoint = f"{self._api_url}/{api}"
-    self.debug(f"posting to {endpoint}: {content}")
+    self.debug(f"posting to {endpoint}")
+    self.debug(content)
     try:
       response = self._req.post(
         endpoint,
@@ -94,7 +101,8 @@ class Tesserae_API:
         timeout=Tesserae_API.TIMEOUT,
         json=content)
       code, resp = response.status_code, response.json()
-      self.debug(f"api-response: {code}: {resp}")
+      self.debug(f"api-response: {code=}")
+      self.debug(resp)
       response.close()
       return code, resp
     except Exception as ex:
@@ -112,9 +120,10 @@ class Tesserae_API:
       response = self._req.get(
         endpoint,
         headers=self._headers({},with_auth),
-        timeout=Tesserae.TIMEOUT)
+        timeout=Tesserae_API.TIMEOUT)
       code, resp = response.status_code, response.json()
-      self.debug(f"api-response: {code}: {resp}")
+      self.debug(f"api-response: {code=}")
+      self.debug(resp)
       response.close()
       return code, resp
     except Exception as ex:
@@ -150,7 +159,7 @@ class Tesserae_API:
   def frame(self):
     """ query frame information """
 
-    endpoint = f"self._id['device_id']/frame"
+    endpoint = f"{self._id['device_id']}/frame"
     return self._get(endpoint)
 
   # --- post status   --------------------------------------------------------

@@ -45,6 +45,15 @@ def connect():
       time.sleep(1)
       continue
 
+# --- output helper   ---------------------------------------------------------
+
+def pp_dict(d):
+  """ pretty-print dict """
+  print("{")
+  for key, value in d.items():
+    print(f"  {key}: {value}")
+  print("}")
+
 # --- discovery helper   ------------------------------------------------------
 
 def discover():
@@ -103,10 +112,7 @@ while True:
   code, resp = api.frame()
   print(f"api.frame(): HTTP-code: {code}")
   if code in [200, 204]:
-    print("{")
-    for key, value in resp.items():
-      print(f"  {key}: {value}")
-    print("}")
+    pp_dict(resp)
   elif code == 304:
     print("not modified")
 
@@ -114,10 +120,7 @@ while True:
   code, resp = api.status({"battery_mv": 3850})
   print(f"api.status(): HTTP-code: {code}")
   if code == 200:
-    print("{")
-    for key, value in resp.items():
-      print(f"  {key}: {value}")
-    print("}")
+    pp_dict(resp)
   else:
     raise RuntimeError(f"unexpected HTTP return code {code}")
 
