@@ -100,9 +100,15 @@ class Tesserae_API:
         headers=self._headers(extra_headers,with_auth),
         timeout=Tesserae_API.TIMEOUT,
         json=content)
-      code, resp = response.status_code, response.json()
+      code = response.status_code
       self.debug(f"api-response: {code=}")
-      self.debug(resp)
+      self.debug("headers:")
+      self.debug(response.headers)
+      resp = response.content
+      if len(resp):
+        if response.headers.get("content-type") == "application/json":
+          resp = json.loads(resp)
+          self.debug(resp)
       response.close()
       return code, resp
     except Exception as ex:
@@ -121,9 +127,15 @@ class Tesserae_API:
         endpoint,
         headers=self._headers({},with_auth),
         timeout=Tesserae_API.TIMEOUT)
-      code, resp = response.status_code, response.json()
+      code = response.status_code
       self.debug(f"api-response: {code=}")
-      self.debug(resp)
+      self.debug("headers:")
+      self.debug(response.headers)
+      resp = response.content
+      if len(resp):
+        if response.headers.get("content-type") == "application/json":
+          resp = json.loads(resp)
+          self.debug(resp)
       response.close()
       return code, resp
     except Exception as ex:
@@ -167,4 +179,4 @@ class Tesserae_API:
   def status(self, info={}):
     """ post status information """
 
-    return self._post("status", info)
+    return self._post(f"{self._id['device_id']}/status", info)
