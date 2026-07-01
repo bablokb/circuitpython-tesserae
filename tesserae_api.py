@@ -170,23 +170,17 @@ class Tesserae_API:
 
   def frame(self):
     """ query frame information """
-
-    endpoint = f"{self._id['device_id']}/frame"
-    return self._get(endpoint)
+    return self._get(f"{self._id['device_id']}/frame")
 
   # --- post status   --------------------------------------------------------
 
   def status(self, info={}):
     """ post status information """
-
     return self._post(f"{self._id['device_id']}/status", info)
 
   # --- post log   -----------------------------------------------------------
 
   def log(self, level, msg):
     """ post status information """
-
-    log = {"level": level,
-           "msg": msg
-           }
-    return self._post(f"{self._id['device_id']}/log", log)
+    return self._post(f"{self._id['device_id']}/log",
+                      {"level": level, "msg": msg})
