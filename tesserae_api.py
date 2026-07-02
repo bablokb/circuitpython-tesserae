@@ -78,6 +78,7 @@ class Tesserae_API:
     headers = {
       "Accept": "application/json",
       "Content-Type":"application/json",
+      "Host": self._api_url.split("//", 1)[1].split("/", 1)[0], # workaround
       }
     headers.update(extra_headers)
     if with_auth and self.token:
