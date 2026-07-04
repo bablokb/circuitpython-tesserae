@@ -96,7 +96,8 @@ except:
 
 req_factory = adafruit_requests.Session(pool)
 
-panel = Tesserae_ID("test_id", 400, 300, app_config.mac)
+panel = Tesserae_ID("API-Test Device", "test_id",
+                    400, 300, "rgb24", app_config.mac)
 api = Tesserae_API(panel.id, app_config.url, req_factory, token=app_config.token,
                    debug=app_config.debug)
 

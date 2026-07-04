@@ -20,7 +20,7 @@ class Tesserae_ID:
 
   # --- constructor   --------------------------------------------------------
 
-  def __init__(self,device_id, width, height, mac):
+  def __init__(self,name, device_id, width, height, gamut, mac):
     """ constructor """
 
     self.id = {
@@ -28,6 +28,8 @@ class Tesserae_ID:
       "kind": Tesserae_ID.KIND,
       "panel_w": width,
       "panel_h": height,
+      "gamut": gamut,
+      "name": name,
       "fw_version": Tesserae_ID.FW_VERSION,
       "mac": mac,
       }
