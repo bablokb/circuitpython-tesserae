@@ -59,6 +59,7 @@ class Tesserae_API:
     self._debug = debug
 
     self.token  = token
+    self._etag  = None
 
   # --- print debug message   ------------------------------------------------
 
@@ -120,7 +121,7 @@ class Tesserae_API:
 
   # --- get data   ----------------------------------------------------------
 
-  def _get(self, api, with_auth=True):
+  def _get(self, api, extra_headers={}, with_auth=True):
     """ query data from Tesserae server """
 
     endpoint = f"{self._api_url}/{api}"
@@ -128,19 +129,20 @@ class Tesserae_API:
     try:
       response = self._req.get(
         endpoint,
-        headers=self._headers({},with_auth),
+        headers=self._headers(extra_headers,with_auth),
         timeout=Tesserae_API.TIMEOUT)
       code = response.status_code
+      headers = response.headers
       self.debug(f"api-response: {code=}")
       self.debug("headers:")
-      self.debug(response.headers)
+      self.debug(headers)
       resp = response.content
       if len(resp):
         if response.headers.get("content-type") == "application/json":
           resp = json.loads(resp)
           self.debug(resp)
       response.close()
-      return code, resp
+      return code, headers, resp
     except Exception as ex:
       self.debug(f"failed to query data from {endpoint} with exception: {ex}")
       raise
@@ -173,7 +175,17 @@ class Tesserae_API:
 
   def frame(self):
     """ query frame information """
-    return self._get(f"{self._id['device_id']}/frame")
+    if self._etag:
+      extra_headers = {"If-None-Match": self._etag}
+    else:
+      extra_headers = {}
+    code, headers, resp = self._get(f"{self._id['device_id']}/frame",
+                                    extra_headers)
+    self._etag = headers.get("etag", None)
+    if code == 304:
+      # 304 does not return a response, so emulate it for the client
+      resp = {"url": headers.get("content-location")}
+    return code, resp
 
   # --- post status   --------------------------------------------------------
 
