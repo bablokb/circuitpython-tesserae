@@ -151,8 +151,8 @@ class Tesserae_API:
           if response.headers.get("content-type") == "application/json":
             resp = json.loads(resp)
             self.debug(resp)
-            response.close()
-            return code, headers, resp
+        response.close()
+        return code, headers, resp
       else:
         return code, headers, response
     except Exception as ex:
