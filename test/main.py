@@ -10,6 +10,7 @@
 # ----------------------------------------------------------------------------
 
 INTERVAL = 15
+OUTFILE = "/tmp/tesserae_api_test.png"
 
 import time
 
@@ -83,6 +84,18 @@ def register(pairing_code):
   print(f"registered with token: {api.token} (reused: {resp.reused_existing}")
   app_config.token = api.token
 
+# --- save dashboard   --------------------------------------------------------
+
+def save_dashboard():
+  """ save dashboard content """
+  try:
+    buffer = api.url_content()
+    with open(OUTFILE,"wb") as f:
+      f.write(buffer)
+    print(f"dashboard downloaded to {OUTFILE}")
+  except Exception as ex:
+    print(f"failed to download dashbard. Exception: {ex}")
+
 # --- main program   ----------------------------------------------------------
 
 try:
@@ -114,8 +127,10 @@ while True:
   print(f"api.frame(): HTTP-code: {code}")
   if code == 200:
     pp_dict(resp)
+    save_dashboard()
   elif code == 304:
     print("not modified")
+    pp_dict(resp)
 
   # send status (fake battery)
   code, resp = api.status({"battery_mv": 3850})

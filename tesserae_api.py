@@ -41,6 +41,7 @@ class Tesserae_API:
 
   TIMEOUT = 2
   API_ROOT = "api/v1/device"
+  CHUNK_SIZE = 4096
 
   # --- constructor   --------------------------------------------------------
 
@@ -121,10 +122,18 @@ class Tesserae_API:
 
   # --- get data   ----------------------------------------------------------
 
-  def _get(self, api, extra_headers={}, with_auth=True):
-    """ query data from Tesserae server """
+  def _get(self, api_or_url, extra_headers={}, with_auth=True):
+    """ query data from Tesserae server.
+    If the argument is an url, the caller has to process the
+    response (and close it). Otherwise, the response is processed here.
+    """
 
-    endpoint = f"{self._api_url}/{api}"
+    if api_or_url[:4] == "http":
+      endpoint = api_or_url
+      is_api = False
+    else:
+      endpoint = f"{self._api_url}/{api_or_url}"
+      is_api = True
     self.debug(f"requesting from {endpoint}")
     try:
       response = self._req.get(
@@ -136,13 +145,16 @@ class Tesserae_API:
       self.debug(f"api-response: {code=}")
       self.debug("headers:")
       self.debug(headers)
-      resp = response.content
-      if len(resp):
-        if response.headers.get("content-type") == "application/json":
-          resp = json.loads(resp)
-          self.debug(resp)
-      response.close()
-      return code, headers, resp
+      if is_api:
+        resp = response.content
+        if len(resp):
+          if response.headers.get("content-type") == "application/json":
+            resp = json.loads(resp)
+            self.debug(resp)
+            response.close()
+            return code, headers, resp
+      else:
+        return code, headers, response
     except Exception as ex:
       self.debug(f"failed to query data from {endpoint} with exception: {ex}")
       raise
@@ -182,9 +194,10 @@ class Tesserae_API:
     code, headers, resp = self._get(f"{self._id['device_id']}/frame",
                                     extra_headers)
     self._etag = headers.get("etag", None)
+    self._url  = headers.get("content-location", None)
     if code == 304:
       # 304 does not return a response, so emulate it for the client
-      resp = {"url": headers.get("content-location")}
+      resp = {"url": self._url}
     return code, resp
 
   # --- post status   --------------------------------------------------------
@@ -199,3 +212,26 @@ class Tesserae_API:
     """ post status information """
     return self._post(f"{self._id['device_id']}/log",
                       {"level": level, "msg": msg})
+
+  # --- content of url returned by /frame   ----------------------------------
+
+  def url_content(self):
+    """ content (binary) of url returned by /frame """
+
+    if not self._url:
+      raise RuntimeError("no cached url")
+    code, headers, response = self._get(self._url,{},False)
+    if code != 200:
+      raise RuntimeError(f"could not fetch data. HTTP-code: {code}")
+    content_length = int(headers.get("content-length"))
+    buffer = bytearray(content_length)
+    offset = 0
+    for chunk in response.iter_content(Tesserae_API.CHUNK_SIZE):
+      l = len(chunk)
+      buffer[offset:offset+l] = chunk
+      offset += l
+    if offset != content_length:
+      raise RuntimeError(
+        f"content length {offset} does not match 'Content-Lengh' header {content_length}")
+    response.close()
+    return buffer
