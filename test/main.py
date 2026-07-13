@@ -10,7 +10,8 @@
 # ----------------------------------------------------------------------------
 
 INTERVAL = 15
-OUTFILE = "/tmp/tesserae_api_test.png"
+FORMAT = "bmp"
+OUTFILE = f"/tmp/tesserae_api_test.{FORMAT}"
 
 import time
 
@@ -110,7 +111,7 @@ except:
 req_factory = adafruit_requests.Session(pool)
 
 panel = Tesserae_ID("API-Test Device", "test_id",
-                    400, 300, "rgb24", app_config.mac)
+                    400, 300, FORMAT, "rgb24", app_config.mac)
 api = Tesserae_API(panel.id, app_config.url, req_factory, token=app_config.token,
                    debug=app_config.debug)
 
