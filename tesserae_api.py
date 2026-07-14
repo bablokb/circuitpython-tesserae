@@ -9,6 +9,7 @@
 
 """ class Tesserae_API - public visible interface class """
 
+import io
 import json
 import time
 
@@ -225,14 +226,20 @@ class Tesserae_API:
     if code != 200:
       raise RuntimeError(f"could not fetch data. HTTP-code: {code}")
     content_length = int(headers.get("content-length"))
-    buffer = bytearray(content_length)
+    self.debug(f"url_content(): content-length: {content_length}")
+    try:
+      buffer = io.BytesIO(content_length)
+    except:
+      # CPython
+      buffer = io.BytesIO(bytearray(content_length))
     offset = 0
     for chunk in response.iter_content(Tesserae_API.CHUNK_SIZE):
       l = len(chunk)
-      buffer[offset:offset+l] = chunk
+      buffer.write(chunk)
       offset += l
     if offset != content_length:
       raise RuntimeError(
         f"content length {offset} does not match 'Content-Lengh' header {content_length}")
+    buffer.seek(0)
     response.close()
     return buffer
