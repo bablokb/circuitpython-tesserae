@@ -217,16 +217,30 @@ class Tesserae_API:
 
   # --- content of url returned by /frame   ----------------------------------
 
-  def url_content(self):
-    """ content (binary) of url returned by /frame """
+  def url_content(self, response_only=False):
+    """ content (binary) of url returned by /frame.
+    response_only: if True the method returns the response, not the content.
+                   In this case, the caller has to close the response.
+                   If False (default), the method returns an open
+                   io.BytesIO-object. The caller has to close this object
+                   and release any ressources bound to it.
+    """
 
     if not self._url:
       raise RuntimeError("no cached url")
     code, headers, response = self._get(self._url,{},False)
     if code != 200:
+      if response:
+        response.close()
       raise RuntimeError(f"could not fetch data. HTTP-code: {code}")
     content_length = int(headers.get("content-length"))
     self.debug(f"url_content(): content-length: {content_length}")
+
+    # don't read response if requested
+    if response_only:
+      return response
+
+    # else create an io.BytesIO object
     try:
       buffer = io.BytesIO(content_length)
     except:
@@ -238,6 +252,7 @@ class Tesserae_API:
       buffer.write(chunk)
       offset += l
     if offset != content_length:
+      response.close()
       raise RuntimeError(
         f"content length {offset} does not match 'Content-Lengh' header {content_length}")
     buffer.seek(0)
