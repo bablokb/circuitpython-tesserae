@@ -62,7 +62,7 @@ class Tesserae_API:
     self._debug = debug
 
     self.token  = token
-    self._etag  = None
+    self.etag  = None
 
   # --- print debug message   ------------------------------------------------
 
@@ -189,13 +189,13 @@ class Tesserae_API:
 
   def frame(self):
     """ query frame information """
-    if self._etag:
-      extra_headers = {"If-None-Match": self._etag}
+    if self.etag:
+      extra_headers = {"If-None-Match": self.etag}
     else:
       extra_headers = {}
     code, headers, resp = self._get(f"{self._id['device_id']}/frame",
                                     extra_headers)
-    self._etag = headers.get("etag", None)
+    self.etag = headers.get("etag", None)
     self._url  = headers.get("content-location", None)
     if code == 304:
       # 304 does not return a response, so emulate it for the client
