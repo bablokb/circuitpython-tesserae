@@ -25,6 +25,6 @@ app_config.debug = True
 
 # application specific
 app_config.url = "http://tesserae-dev:8765"
-app_config.mac   = "DE:AD:BE:EF"
+app_config.mac   = "02:00:DE:AD:BE:EF"
 app_config.token = None
 #app_config.pairing_code = 123456
