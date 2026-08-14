@@ -24,6 +24,8 @@ class Tesserae_ID:
   def __init__(self,name, device_id, width, height, rotation, format, gamut, mac):
     """ constructor """
 
+    if not mac:
+      raise ValueError("MAC-address not provided")
     self.id = {
       "device_id": device_id,
       "kind": Tesserae_ID.KIND,
