@@ -73,9 +73,11 @@ class Tesserae_API:
     """ print debug message """
     if self._debug:
       if isinstance(msg,dict):
+        # note: CircuitPython's json.dumps does not have 'indent'
         print("Tesserae: {")
-        for key, value in msg.items():
-          print(f"Tesserae:   {key}: {value}")
+        s_dict = json.dumps(msg, separators=(',\n ', ': '))[1:-1].split('\n')
+        for line in s_dict:
+          print(f"Tesserae:   {line}")
         print("Tesserae: }")
       else:
         print(f"Tesserae: {msg}")
