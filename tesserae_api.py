@@ -17,7 +17,7 @@ class Tesserae_ID:
   """ ID structure for Tesserae Clients """
 
   KIND = "circuitpython_generic"
-  FW_VERSION = "0.1.0"
+  FW_VERSION = "0.2.0"
 
   # --- constructor   --------------------------------------------------------
 
@@ -113,16 +113,17 @@ class Tesserae_API:
         timeout=Tesserae_API.TIMEOUT,
         json=content)
       code = response.status_code
+      headers = response.headers
       self.debug(f"api-response: {code=}")
       self.debug("headers:")
-      self.debug(response.headers)
+      self.debug(headers)
       resp = response.content
       if len(resp):
         if response.headers.get("content-type") == "application/json":
           resp = json.loads(resp)
           self.debug(resp)
       response.close()
-      return code, resp
+      return code, headers, resp
     except Exception as ex:
       self.debug(f"failed to post data to {endpoint} with exception: {ex}")
       raise
@@ -172,10 +173,10 @@ class Tesserae_API:
     """ post identity for discovery
     id: dictionary with identity attributes (see docs)
     """
-    code, resp = self._post("discover", self._id, {}, False)
+    code, headers, resp = self._post("discover", self._id, {}, False)
     if code == 200 and "device_token" in resp:
       self.token = resp["device_token"]
-    return code, resp
+    return code, headers, resp
 
   # --- register   ----------------------------------------------------------
 
@@ -183,12 +184,12 @@ class Tesserae_API:
     """ post identity for registration
     id: dictionary with identity attributes (see docs)
     """
-    code, resp = self._post("register", self._id,
-                            {"X-Pairing-Code": f"{pairing_code}"},
-                            False)
+    code, headers, resp = self._post("register", self._id,
+                                     {"X-Pairing-Code": f"{pairing_code}"},
+                                     False)
     if code == 201 and "device_token" in resp:
       self.token = resp["device_token"]
-    return code, resp
+    return code, headers, resp
 
   # --- query frame information   --------------------------------------------
 

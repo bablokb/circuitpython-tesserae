@@ -61,10 +61,15 @@ def pp_dict(d):
 def discover():
   """ use discovery """
   while not app_config.token:
-    code, resp = api.discover()
+    code, header, resp = api.discover()
+
+    # bail out (fatal errors):
     if code != 200:
-      # bail out
       raise RuntimeError(f"Tesserae-Server HTTP-Code: {code}, content: {resp}")
+    if headers.get("x-tesserae-device-id-changed", "false") != "false":
+      raise RuntimeError(
+        f"error: duplicate MAC for device_id: {self._data['device_id']}")
+
     if resp.get("registered",False):
       print(f"registered with token: {api.token}")
       app_config.token = api.token
@@ -78,7 +83,7 @@ def discover():
 def register(pairing_code):
   """ use fallback registration """
 
-  code, resp = api.register(pairing_code)
+  code, headers, resp = api.register(pairing_code)
   if code != 201:
     # bail out
     raise RuntimeError(f"Tesserae-Server HTTP-Code: {code}, content: {resp}")
@@ -134,7 +139,7 @@ while True:
     pp_dict(resp)
 
   # send status (fake battery)
-  code, resp = api.status({"battery_mv": 3850})
+  code, headers, resp = api.status({"battery_mv": 3850})
   print(f"api.status(): HTTP-code: {code}")
   if code == 200:
     pp_dict(resp)
