@@ -95,9 +95,8 @@ def register(pairing_code):
 def save_dashboard():
   """ save dashboard content """
   try:
-    buffer = api.url_content()
     with open(OUTFILE,"wb") as f:
-      f.write(buffer)
+      api.url_content(io_obj=f)
     print(f"dashboard downloaded to {OUTFILE}")
   except Exception as ex:
     print(f"failed to download dashbard. Exception: {ex}")

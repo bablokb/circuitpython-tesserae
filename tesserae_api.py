@@ -17,7 +17,7 @@ class Tesserae_ID:
   """ ID structure for Tesserae Clients """
 
   KIND = "circuitpython_generic"
-  FW_VERSION = "0.2.0"
+  FW_VERSION = "0.3.0"
 
   # --- constructor   --------------------------------------------------------
 
@@ -223,13 +223,14 @@ class Tesserae_API:
 
   # --- content of url returned by /frame   ----------------------------------
 
-  def url_content(self, response_only=False):
+  def url_content(self, io_obj=None):
     """ content (binary) of url returned by /frame.
-    response_only: if True the method returns the response, not the content.
-                   In this case, the caller has to close the response.
-                   If False (default), the method returns an open
-                   io.BytesIO-object. The caller has to close this object
-                   and release any ressources bound to it.
+    io_obj: if None (default) the method returns the response, not the content.
+            In this case, the caller has to close the response.
+            Otherwise, an open io-object that supports write/seek.
+            The content will be written to the io_obj.
+            The caller has to close this object and release any ressources
+            bound to it.
     """
 
     if not self._url:
@@ -243,24 +244,18 @@ class Tesserae_API:
     self.debug(f"url_content(): content-length: {content_length}")
 
     # don't read response if requested
-    if response_only:
+    if not io_obj:
       return response
 
-    # else create an io.BytesIO object
-    try:
-      buffer = io.BytesIO(content_length)
-    except:
-      # CPython
-      buffer = io.BytesIO(bytearray(content_length))
     offset = 0
     for chunk in response.iter_content(Tesserae_API.CHUNK_SIZE):
       l = len(chunk)
-      buffer.write(chunk)
+      io_obj.write(chunk)
       offset += l
     if offset != content_length:
       response.close()
       raise RuntimeError(
         f"content length {offset} does not match 'Content-Lengh' header {content_length}")
-    buffer.seek(0)
+    io_obj.seek(0)
     response.close()
-    return buffer
+    return io_obj
