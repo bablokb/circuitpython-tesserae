@@ -13,6 +13,12 @@ import io
 import json
 import time
 
+try:
+  from adafruit_requests import OutOfRetries
+except ImportError:
+  # older library versions without OutOfRetries raise OSError directly
+  OutOfRetries = OSError
+
 class Tesserae_ID:
   """ ID structure for Tesserae Clients """
 
@@ -44,7 +50,9 @@ class Tesserae_ID:
 class Tesserae_API:
   """ interface class for the Tesserae REST-API """
 
-  TIMEOUT = 2
+  TIMEOUT = 5
+  RETRIES = 3
+  RETRY_DELAY = 1
   API_ROOT = "api/v1/device"
   CHUNK_SIZE = 4096
 
@@ -66,6 +74,7 @@ class Tesserae_API:
 
     self.token  = token
     self.etag  = None
+    self._url   = None
 
   # --- print debug message   ------------------------------------------------
 
@@ -98,6 +107,31 @@ class Tesserae_API:
       raise RuntimeError("no Auth-Token")
     return headers
 
+  # --- request with retries   -----------------------------------------------
+
+  def _request(self, method, endpoint, **kwargs):
+    """ execute a request, retrying on transient network failures.
+
+    adafruit_requests already retries once internally with a fresh socket,
+    but a busy server or a dropped keep-alive connection can still exhaust
+    that, so back off briefly and try again before giving up. Valid HTTP
+    error responses are answers, not transport failures, and are returned
+    to the caller without a retry.
+    """
+    for attempt in range(Tesserae_API.RETRIES):
+      try:
+        if method == "GET":
+          return self._req.get(endpoint, **kwargs)
+        else:
+          return self._req.post(endpoint, **kwargs)
+      except (OutOfRetries, OSError) as ex:
+        if attempt == Tesserae_API.RETRIES - 1:
+          raise
+        self.debug(
+          f"transient failure for {endpoint} ({ex}), "
+          f"retrying in {Tesserae_API.RETRY_DELAY}s")
+        time.sleep(Tesserae_API.RETRY_DELAY)
+
   # --- post data   ----------------------------------------------------------
 
   def _post(self, api, content, extra_headers={}, with_auth=True):
@@ -107,8 +141,8 @@ class Tesserae_API:
     self.debug(f"posting to {endpoint}")
     self.debug(content)
     try:
-      response = self._req.post(
-        endpoint,
+      response = self._request(
+        "POST", endpoint,
         headers=self._headers(extra_headers,with_auth),
         timeout=Tesserae_API.TIMEOUT,
         json=content)
@@ -144,8 +178,8 @@ class Tesserae_API:
       is_api = True
     self.debug(f"requesting from {endpoint}")
     try:
-      response = self._req.get(
-        endpoint,
+      response = self._request(
+        "GET", endpoint,
         headers=self._headers(extra_headers,with_auth),
         timeout=Tesserae_API.TIMEOUT)
       code = response.status_code
