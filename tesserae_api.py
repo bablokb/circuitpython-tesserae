@@ -23,7 +23,7 @@ class Tesserae_ID:
   """ ID structure for Tesserae Clients """
 
   KIND = "circuitpython_generic"
-  FW_VERSION = "0.3.0"
+  FW_VERSION = "0.4.0"
 
   # --- constructor   --------------------------------------------------------
 
@@ -259,12 +259,18 @@ class Tesserae_API:
 
   def url_content(self, io_obj=None):
     """ content (binary) of url returned by /frame.
-    io_obj: if None (default) the method returns the response, not the content.
-            In this case, the caller has to close the response.
-            Otherwise, an open io-object that supports write/seek.
-            The content will be written to the io_obj.
-            The caller has to close this object and release any ressources
-            bound to it.
+    io_obj: None (default) or an open io-object that supports write/seek.
+
+    If None, the method returns the response, not the content.
+    In this case, the caller has to close the response.
+
+    Otherwise, the content will be written to the io_obj. If the
+    io-object is of type io.BytesIO, the caller should create it with
+    a length of `0`. The method will reallocate it with a suitable
+    length for the content.
+
+    The caller has to close the io_obj and release any ressources
+    bound to it.
     """
 
     if not self._url:
@@ -281,6 +287,20 @@ class Tesserae_API:
     if not io_obj:
       return response
 
+    # pre-allocate buffer in case of io.BytesIO
+    import io
+    if isinstance(io_obj,io.BytesIO):
+      try:
+        io_obj.close()
+      except:
+        pass
+      try:
+        io_obj = io.BytesIO(content_length)
+      except:
+        # CPython
+        io_obj = io.BytesIO(bytearray(content_length))
+
+    # write to the io_obj
     offset = 0
     for chunk in response.iter_content(Tesserae_API.CHUNK_SIZE):
       l = len(chunk)
