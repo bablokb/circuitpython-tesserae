@@ -23,7 +23,7 @@ class Tesserae_ID:
   """ ID structure for Tesserae Clients """
 
   KIND = "circuitpython_generic"
-  FW_VERSION = "0.4.0"
+  FW_VERSION = "0.4.1"
 
   # --- constructor   --------------------------------------------------------
 
@@ -128,7 +128,7 @@ class Tesserae_API:
         if attempt == Tesserae_API.RETRIES - 1:
           raise
         self.debug(
-          f"transient failure for {endpoint} ({ex}), "
+          f"transient failure for {endpoint} ({ex}), " +
           f"retrying in {Tesserae_API.RETRY_DELAY}s")
         time.sleep(Tesserae_API.RETRY_DELAY)
 
