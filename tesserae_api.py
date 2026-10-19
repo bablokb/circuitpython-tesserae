@@ -23,7 +23,7 @@ class Tesserae_ID:
   """ ID structure for Tesserae Clients """
 
   KIND = "circuitpython_generic"
-  FW_VERSION = "0.4.1"
+  FW_VERSION = "0.5.0"
 
   # --- constructor   --------------------------------------------------------
 
@@ -132,6 +132,19 @@ class Tesserae_API:
           f"retrying in {Tesserae_API.RETRY_DELAY}s")
         time.sleep(Tesserae_API.RETRY_DELAY)
 
+  # --- add query parameters   -----------------------------------------------
+
+  def _add_query_params(self, url, params={}):
+    """ add query parameters to url """
+
+    # add query parameters. TODO: do we need url-encoding?
+    if params:
+      url += "?"
+      for key, value in params.items():
+        url += f"{key}={value}&"
+      url = url[:-1]
+    return url
+
   # --- post data   ----------------------------------------------------------
 
   def _post(self, api, content, extra_headers={}, with_auth=True):
@@ -164,7 +177,7 @@ class Tesserae_API:
 
   # --- get data   ----------------------------------------------------------
 
-  def _get(self, api_or_url, extra_headers={}, with_auth=True):
+  def _get(self, api_or_url, extra_headers={}, params={}, with_auth=True):
     """ query data from Tesserae server.
     If the argument is an url, the caller has to process the
     response (and close it). Otherwise, the response is processed here.
@@ -176,6 +189,8 @@ class Tesserae_API:
     else:
       endpoint = f"{self._api_url}/{api_or_url}"
       is_api = True
+    endpoint = self._add_query_params(endpoint, params)
+
     self.debug(f"requesting from {endpoint}")
     try:
       response = self._request(
@@ -227,14 +242,15 @@ class Tesserae_API:
 
   # --- query frame information   --------------------------------------------
 
-  def frame(self):
+  def frame(self, params={}):
     """ query frame information """
     if self.etag:
       extra_headers = {"If-None-Match": self.etag}
     else:
       extra_headers = {}
     code, headers, resp = self._get(f"{self._id['device_id']}/frame",
-                                    extra_headers)
+                                    extra_headers=extra_headers,
+                                    params=params)
     self.etag = headers.get("etag", None)
     self._url  = headers.get("content-location", None)
     if code == 304:
@@ -275,7 +291,8 @@ class Tesserae_API:
 
     if not self._url:
       raise RuntimeError("no cached url")
-    code, headers, response = self._get(self._url,{},False)
+    code, headers, response = self._get(self._url, extra_headers={},
+                                        with_auth=False)
     if code != 200:
       if response:
         response.close()
