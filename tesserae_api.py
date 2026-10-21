@@ -23,7 +23,7 @@ class Tesserae_ID:
   """ ID structure for Tesserae Clients """
 
   KIND = "circuitpython_generic"
-  FW_VERSION = "0.5.0"
+  FW_VERSION = "0.5.1"
 
   # --- constructor   --------------------------------------------------------
 
@@ -236,7 +236,7 @@ class Tesserae_API:
     code, headers, resp = self._post("register", self._id,
                                      {"X-Pairing-Code": f"{pairing_code}"},
                                      False)
-    if code == 201 and "device_token" in resp:
+    if code in [200, 201] and "device_token" in resp:
       self.token = resp["device_token"]
     return code, headers, resp
 
