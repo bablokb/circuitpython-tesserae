@@ -23,7 +23,7 @@ class Tesserae_ID:
   """ ID structure for Tesserae Clients """
 
   KIND = "circuitpython_generic"
-  FW_VERSION = "0.5.1"
+  FW_VERSION = "0.6.0"
 
   # --- constructor   --------------------------------------------------------
 
@@ -47,6 +47,7 @@ class Tesserae_ID:
 
 # --- API wrapper   ----------------------------------------------------------
 
+LOG_SRC = "Tesserae-API"
 class Tesserae_API:
   """ interface class for the Tesserae REST-API """
 
@@ -58,7 +59,7 @@ class Tesserae_API:
 
   # --- constructor   --------------------------------------------------------
 
-  def __init__(self, id, url, req_factory, token=None, debug=False):
+  def __init__(self, id, url, req_factory, token=None):
     """ constructor
     id: ID of this device
     url: ip or hostname of Tesserae server (including port)
@@ -70,7 +71,6 @@ class Tesserae_API:
     self._id = id
     self._api_url   = f"{url}/{Tesserae_API.API_ROOT}"
     self._req   = req_factory
-    self._debug = debug
 
     self.token  = token
     self.etag  = None
@@ -78,18 +78,9 @@ class Tesserae_API:
 
   # --- print debug message   ------------------------------------------------
 
-  def debug(self,msg):
-    """ print debug message """
-    if self._debug:
-      if isinstance(msg,dict):
-        # note: CircuitPython's json.dumps does not have 'indent'
-        print("Tesserae: {")
-        s_dict = json.dumps(msg, separators=(',\n ', ': '))[1:-1].split('\n')
-        for line in s_dict:
-          print(f"Tesserae:   {line}")
-        print("Tesserae: }")
-      else:
-        print(f"Tesserae: {msg}")
+  def log(self, src, msg):
+    """ print (debug) message. Override from application """
+    pass
 
   # --- build header   -------------------------------------------------------
 
@@ -127,7 +118,7 @@ class Tesserae_API:
       except (OutOfRetries, OSError) as ex:
         if attempt == Tesserae_API.RETRIES - 1:
           raise
-        self.debug(
+        self.log(LOG_SRC,
           f"transient failure for {endpoint} ({ex}), " +
           f"retrying in {Tesserae_API.RETRY_DELAY}s")
         time.sleep(Tesserae_API.RETRY_DELAY)
@@ -151,8 +142,8 @@ class Tesserae_API:
     """ post the given (json) content """
 
     endpoint = f"{self._api_url}/{api}"
-    self.debug(f"posting to {endpoint}")
-    self.debug(content)
+    self.log(LOG_SRC, f"posting to {endpoint}")
+    self.log(LOG_SRC, content)
     try:
       response = self._request(
         "POST", endpoint,
@@ -161,18 +152,18 @@ class Tesserae_API:
         json=content)
       code = response.status_code
       headers = response.headers
-      self.debug(f"api-response: {code=}")
-      self.debug("headers:")
-      self.debug(headers)
+      self.log(LOG_SRC, f"api-response: {code=}")
+      self.log(LOG_SRC, "headers:")
+      self.log(LOG_SRC, headers)
       resp = response.content
       if len(resp):
         if response.headers.get("content-type") == "application/json":
           resp = json.loads(resp)
-          self.debug(resp)
+          self.log(LOG_SRC, resp)
       response.close()
       return code, headers, resp
     except Exception as ex:
-      self.debug(f"failed to post data to {endpoint} with exception: {ex}")
+      self.log(LOG_SRC, f"failed to post data to {endpoint} with exception: {ex}")
       raise
 
   # --- get data   ----------------------------------------------------------
@@ -191,7 +182,7 @@ class Tesserae_API:
       is_api = True
     endpoint = self._add_query_params(endpoint, params)
 
-    self.debug(f"requesting from {endpoint}")
+    self.log(LOG_SRC, f"requesting from {endpoint}")
     try:
       response = self._request(
         "GET", endpoint,
@@ -199,21 +190,21 @@ class Tesserae_API:
         timeout=Tesserae_API.TIMEOUT)
       code = response.status_code
       headers = response.headers
-      self.debug(f"api-response: {code=}")
-      self.debug("headers:")
-      self.debug(headers)
+      self.log(LOG_SRC, f"api-response: {code=}")
+      self.log(LOG_SRC, "headers:")
+      self.log(LOG_SRC, headers)
       if is_api:
         resp = response.content
         if len(resp):
           if response.headers.get("content-type") == "application/json":
             resp = json.loads(resp)
-            self.debug(resp)
+            self.log(LOG_SRC, resp)
         response.close()
         return code, headers, resp
       else:
         return code, headers, response
     except Exception as ex:
-      self.debug(f"failed to query data from {endpoint} with exception: {ex}")
+      self.log(LOG_SRC, f"failed to query data from {endpoint} with exception: {ex}")
       raise
 
   # --- discover   ----------------------------------------------------------
@@ -266,8 +257,8 @@ class Tesserae_API:
 
   # --- post log   -----------------------------------------------------------
 
-  def log(self, level, msg):
-    """ post status information """
+  def send_log(self, level, msg):
+    """ post log information """
     return self._post(f"{self._id['device_id']}/log",
                       {"level": level, "msg": msg})
 
@@ -298,7 +289,7 @@ class Tesserae_API:
         response.close()
       raise RuntimeError(f"could not fetch data. HTTP-code: {code}")
     content_length = int(headers.get("content-length"))
-    self.debug(f"url_content(): content-length: {content_length}")
+    self.log(LOG_SRC, f"url_content(): content-length: {content_length}")
 
     # don't read response if requested
     if not io_obj:
