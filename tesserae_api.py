@@ -23,7 +23,7 @@ class Tesserae_ID:
   """ ID structure for Tesserae Clients """
 
   KIND = "circuitpython_generic"
-  FW_VERSION = "0.6.0"
+  FW_VERSION = "0.6.1"
 
   # --- constructor   --------------------------------------------------------
 
@@ -78,7 +78,7 @@ class Tesserae_API:
 
   # --- print debug message   ------------------------------------------------
 
-  def log(self, src, msg):
+  def log(self, src, *args):
     """ print (debug) message. Override from application """
     pass
 
