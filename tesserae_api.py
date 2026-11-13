@@ -23,7 +23,7 @@ class Tesserae_ID:
   """ ID structure for Tesserae Clients """
 
   KIND = "circuitpython_generic"
-  FW_VERSION = "0.6.1"
+  FW_VERSION = "0.7.0"
 
   # --- constructor   --------------------------------------------------------
 
@@ -75,12 +75,20 @@ class Tesserae_API:
     self.token  = token
     self.etag  = None
     self._url   = None
+    self._timeout = Tesserae_API.TIMEOUT
 
   # --- print debug message   ------------------------------------------------
 
   def log(self, src, *args):
     """ print (debug) message. Override from application """
     pass
+
+  # --- timeout   ------------------------------------------------------------
+
+  def timeout(self, value):
+    """ set timeout """
+    self._timeout = value
+    self.log(LOG_SRC, f"setting API-timeout: {self._timeout}")
 
   # --- build header   -------------------------------------------------------
 
@@ -148,7 +156,7 @@ class Tesserae_API:
       response = self._request(
         "POST", endpoint,
         headers=self._headers(extra_headers,with_auth),
-        timeout=Tesserae_API.TIMEOUT,
+        timeout=self._timeout,
         json=content)
       code = response.status_code
       headers = response.headers
@@ -187,7 +195,7 @@ class Tesserae_API:
       response = self._request(
         "GET", endpoint,
         headers=self._headers(extra_headers,with_auth),
-        timeout=Tesserae_API.TIMEOUT)
+        timeout=self._timeout)
       code = response.status_code
       headers = response.headers
       self.log(LOG_SRC, f"api-response: {code=}")
